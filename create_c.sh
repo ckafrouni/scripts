@@ -46,7 +46,7 @@ echo -e "\033[33m# Creating C project at path: [ \033[34m$path\033[0m\033[33m ]\
 echo ""
 
 # Create the project directory
-if [ -d "$path" ]; then
+if [ -d "$path" -a "$path" != "." ]; then
     echo -e "\033[31m* WARNING: [ \033[34m$path\033[0m\033[31m ] already exists\033[0m"
     echo -n -e "\033[31m-> Would you like to overwrite it? [y/N]\033[0m "
     read -r overwrite
