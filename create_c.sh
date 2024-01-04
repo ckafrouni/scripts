@@ -7,11 +7,12 @@
 # -h: Display help
 
 display_help() {
+    help_file=$HOME/scripts/create_c_files/help.md
     # Display help, using the PAGER environment variable if possible
     if [ -z "$PAGER" ]; then
-        cat $HOME/scripts/create_c/help.md 1>&2
+        cat $help_file 1>&2
     else
-        $PAGER $HOME/scripts/create_c/help.md 1>&2
+        $PAGER $help_file 1>&2
     fi
 }
 
