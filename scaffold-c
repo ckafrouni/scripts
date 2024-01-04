@@ -1,0 +1,136 @@
+#!/bin/bash
+
+# TODO: implement `-d` for dry run
+
+display_help() {
+    help_file=$HOME/scripts/scaffold-c-files/help.md
+    if [ -z "$PAGER" ]; then
+        cat $help_file 1>&2
+    else
+        $PAGER $help_file 1>&2
+    fi
+}
+
+# Global options parsing
+while getopts ":h:d" opt; do
+    case ${opt} in
+    h)
+        display_help
+        exit 0
+        ;;
+    d)
+        dry_run=1
+        echo "I'm here"
+        ;;
+    \?)
+        echo -e "\033[31mOption ERROR: -$OPTARG" 1>&2
+        exit 1
+        ;;
+    esac
+done
+
+shift $((OPTIND - 1))
+
+# Check if the required arguments are present
+if [ $# -lt 2 ]; then
+    echo -e "\033[31mMissing argument: <CMD> <PATH>\033[0m"
+    exit 1
+fi
+
+# Assign the positional parameters to variables
+cmd=$1
+path=$2
+shift 2 # Remove the first two positional parameters
+
+# Define the 'create' function
+create() {
+    force=0
+
+    # Parse optional arguments
+    while getopts ":f" opt; do
+        case ${opt} in
+        f)
+            force=1
+            ;;
+        \?)
+            echo -e "\033[31mOption ERROR: -$OPTARG" 1>&2
+            exit 1
+            ;;
+        esac
+    done
+
+    shift $((OPTIND - 1))
+
+    echo -e "\033[33m# Creating C project at path: [ \033[34m$path\033[0m\033[33m ]\033[0m"
+    echo ""
+
+    # Create the project directory
+    if [ -d "$path" -a "$path" != "." ]; then
+        echo -e "\033[31m* WARNING: [ \033[34m$path\033[0m\033[31m ] already exists\033[0m"
+        if [ "$force" = "1" ]; then
+            overwrite="y"
+        else
+            echo -n -e "\033[31m-> Would you like to overwrite it? [y/N]\033[0m "
+            read -r overwrite
+        fi
+        if [ "$overwrite" != "y" ]; then
+            echo -e "\033[31m-> \033[33mAborting...\033[0m"
+            exit 1
+        fi
+        echo -e "\033[31m-> \033[32mOverwriting...\033[0m"
+        rm -rf "$path"
+    fi
+
+    mkdir -p "$path"
+
+    mkdir -p "$path/src"
+    mkdir -p "$path/include"
+    mkdir -p "$path/lib"
+
+    touch "$path/include/.gitkeep"
+    touch "$path/lib/.gitkeep"
+
+    cp $HOME/scripts/scaffold-c-files/Makefile "$path/Makefile"
+    cp $HOME/scripts/scaffold-c-files/main.c "$path/src/main.c"
+    cp $HOME/scripts/scaffold-c-files/.gitignore "$path/.gitignore"
+    cp $HOME/scripts/scaffold-c-files/README.md "$path/README.md"
+    cp $HOME/scripts/scaffold-c-files/colors.h "$path/include/colors.h"
+
+    git -C "$path" init
+    git -C "$path" add .
+    git -C "$path" commit -m "Initial commit"
+}
+
+add() {
+    # Parse the required arguments
+    name=$1
+
+    echo -e "\033[33m# Adding file/header to C project at path: [ \033[34m$path\033[0m\033[33m ]\033[0m"
+    echo ""
+    echo -e "\033[33m# Name: [ \033[34m$name\033[0m\033[33m ]\033[0m"
+
+    touch "$path/src/$name.c"
+    touch "$path/include/$name.h"
+
+    echo "#include \"$name.h\"" >>"$path/src/$name.c"
+    echo "" >>"$path/src/$name.c"
+
+    echo "#ifndef __${name^^}_H__" >>"$path/include/$name.h"
+    echo "#define __${name^^}_H__" >>"$path/include/$name.h"
+    echo "" >>"$path/include/$name.h"
+    echo "#endif // __${name^^}_H__" >>"$path/include/$name.h"
+}
+
+# Main script logic
+case $cmd in
+create)
+    create "$@"
+    ;;
+add)
+    add "$@"
+    ;;
+*)
+    echo -e "\033[31mInvalid command: [ \033[34m$cmd\033[0m\033[31m ]\033[0m"
+    exit 1
+    ;;
+esac
