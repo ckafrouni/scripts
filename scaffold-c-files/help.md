@@ -26,4 +26,4 @@ scaffold-c CMD PATH [...OPTIONS]
 
 * `-h`: Display this help message and exit.
 
-* `-d`: Dry run. Do not execute any command.
+* `-d`: Dry run. Do not execute any command. ***[Not implemented yet]***
