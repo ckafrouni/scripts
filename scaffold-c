@@ -90,7 +90,10 @@ create() {
     touch "$path/include/.gitkeep"
     touch "$path/lib/.gitkeep"
 
-    cp $HOME/scripts/scaffold-c-files/Makefile "$path/Makefile"
+    cp $HOME/scripts/scaffold-c-files/CMakeLists.txt "$path/CMakeLists.txt"
+    cp $HOME/scripts/scaffold-c-files/build.sh "$path/build.sh"
+    chmod +x "$path/build.sh"
+
     cp $HOME/scripts/scaffold-c-files/main.c "$path/src/main.c"
     cp $HOME/scripts/scaffold-c-files/.gitignore "$path/.gitignore"
     cp $HOME/scripts/scaffold-c-files/README.md "$path/README.md"
