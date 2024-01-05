@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# TODO: implement `-d` for dry run
-
 display_help() {
     help_file=$HOME/scripts/scaffold-c-files/help.md
     if [ -z "$PAGER" ]; then
@@ -11,25 +9,28 @@ display_help() {
     fi
 }
 
+TEMP=$(getopt -o h --long help,dry-run -n 'scaffold-c' -- "$@")
+eval set -- "$TEMP"
+
+# Default values
+
 # Global options parsing
-while getopts ":h:d" opt; do
-    case ${opt} in
-    h)
+while true; do
+    case "$1" in
+    -h | --help)
         display_help
         exit 0
         ;;
-    d)
-        dry_run=1
-        echo "I'm here"
+    --)
+        shift
+        break
         ;;
-    \?)
-        echo -e "\033[31mOption ERROR: -$OPTARG" 1>&2
+    *)
+        echo -e "\033[31mOption ERROR: $1" 1>&2
         exit 1
         ;;
     esac
 done
-
-shift $((OPTIND - 1))
 
 # Check if the required arguments are present
 if [ $# -lt 2 ]; then
@@ -44,38 +45,59 @@ shift 2 # Remove the first two positional parameters
 
 # Define the 'create' function
 create() {
-    force=0
+    # Default values
+    dry_run=false # TODO: implement
+    force=false
+    git=true
+    project_name=$(basename "$path")
 
     # Parse optional arguments
-    while getopts ":f" opt; do
-        case ${opt} in
-        f)
-            force=1
+    TEMP=$(getopt -o f --long force,project-name:,no-git,dry-run -n 'scaffold-cd' -- "$@")
+    eval set -- "$TEMP"
+
+    while true; do
+        case "$1" in
+        -f | --force)
+            force=true
+            shift
             ;;
-        \?)
-            echo -e "\033[31mOption ERROR: -$OPTARG" 1>&2
+        --project-name)
+            project_name="$2"
+            shift 2
+            ;;
+        --no-git)
+            git=false
+            shift
+            ;;
+        --dry-run)
+            dry_run=true
+            shift
+            ;;
+        --)
+            shift
+            break
+            ;;
+        *)
+            echo -e "\033[31mOption ERROR: $1" 1>&2
             exit 1
             ;;
         esac
     done
 
-    shift $((OPTIND - 1))
-
     echo -e "\033[33m# Creating C project at path: [ \033[34m$path\033[0m\033[33m ]\033[0m"
+    echo -e "\033[33m# Project name: [ \033[34m$project_name\033[0m\033[33m ]\033[0m"
     echo ""
 
     # Create the project directory
     if [ -d "$path" -a "$path" != "." ]; then
         echo -e "\033[31m* WARNING: [ \033[34m$path\033[0m\033[31m ] already exists\033[0m"
-        if [ "$force" = "1" ]; then
-            overwrite="y"
-        else
+        if [ ! "$force" ]; then
             echo -n -e "\033[31m-> Would you like to overwrite it? [y/N]\033[0m "
             read -r overwrite
-        fi
-        if [ "$overwrite" != "y" ]; then
-            echo -e "\033[31m-> \033[33mAborting...\033[0m"
-            exit 1
+            if [ "$overwrite" != "y" ]; then
+                echo -e "\033[31m-> \033[33mAborting...\033[0m"
+                exit 1
+            fi
         fi
         echo -e "\033[31m-> \033[32mOverwriting...\033[0m"
         rm -rf "$path"
@@ -91,17 +113,21 @@ create() {
     touch "$path/lib/.gitkeep"
 
     cp $HOME/scripts/scaffold-c-files/CMakeLists.txt "$path/CMakeLists.txt"
+    sed -i "s|PROJECT_NAME|$project_name|g" "$path/CMakeLists.txt"
     cp $HOME/scripts/scaffold-c-files/build.sh "$path/build.sh"
     chmod +x "$path/build.sh"
 
     cp $HOME/scripts/scaffold-c-files/main.c "$path/src/main.c"
     cp $HOME/scripts/scaffold-c-files/.gitignore "$path/.gitignore"
     cp $HOME/scripts/scaffold-c-files/README.md "$path/README.md"
+    sed -i "s|PROJECT_NAME|$project_name|g" "$path/README.md"
     cp $HOME/scripts/scaffold-c-files/colors.h "$path/include/colors.h"
 
-    git -C "$path" init
-    git -C "$path" add .
-    git -C "$path" commit -m "Initial commit"
+    if [ "$git" ]; then
+        git -C "$path" init
+        git -C "$path" add .
+        git -C "$path" commit -m "Initial commit"
+    fi
 }
 
 add() {
