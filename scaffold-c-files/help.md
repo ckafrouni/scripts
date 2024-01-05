@@ -18,12 +18,16 @@ scaffold-c CMD PATH [...OPTIONS]
 
 * `create`: Create the project directory.
 
-  * `-f`: Force creation of the project directory, even if it already exists.
+  * `-f | --force`: Force creation of the project directory, even if it already exists.
+
+  * `--no-git`: Does not initialize the project directory as a Git repository.
+
+  * `--project-name`: Name of the project. Defaults to the name of the project directory.
+
+  * `--dry-run`: Do not execute any command. ***[Not implemented yet]***
 
 * `add <name>`: Add a file to the project directory.
 
 ## Global Options
 
-* `-h`: Display this help message and exit.
-
-* `-d`: Dry run. Do not execute any command. ***[Not implemented yet]***
+* `-h | --help`: Display this help message and exit.
